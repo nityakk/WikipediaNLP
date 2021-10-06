@@ -24,6 +24,13 @@ nltk.download('wordnet')
 from nltk.stem import WordNetLemmatizer, SnowballStemmer
 from nltk.stem.porter import *
 from heapq import nlargest
+import gensim.corpora as corpora
+from pprint import pprint
+
+import pyLDAvis
+import pyLDAvis.gensim_models 
+import pickle 
+
 #%% Load data
 #os.chdir(".//School//Columbia//ChildAbuse&Neglect_CodingExercise//WikipediaNLP")
 
@@ -69,12 +76,6 @@ toptexts['text_processed'] = \
 
 print("Finished loading data...")
 
-#%% 100 most commonly used words
-""" What are the 100 most commonly used words in the body of the articles in 
-these Wikipedia pages? The body is the section with the <text> heading. """
-
-print("Finding 100 most commonly used words...")
-# Define stopwords
 def split_title(texts):
     for text in texts:
         yield(gensim.utils.simple_preprocess(str(text), deacc=True))
@@ -91,6 +92,12 @@ words = list(split_title(wordlist))
 # Remove stopwords
 wikiwords = [[word for word in simple_preprocess(str(w)) 
              if word not in stop_words] for w in words]
+
+#%% 100 most commonly used words
+""" What are the 100 most commonly used words in the body of the articles in 
+these Wikipedia pages? The body is the section with the <text> heading. """
+
+print("Finding 100 most commonly used words...")
 
 corpus = []
 for wiki in wikiwords:
@@ -114,9 +121,36 @@ with open('hundred_largest.csv', 'w', encoding="ISO-8859-1", newline='') as file
         if w!="":
             wr.writerow([w])
 
-#%% 
+#%% 10 Useful Words
 """Please choose any article in the dataset – what are the 10 words 
-that would be most useful to detect articles that are similar to it?
-Explain the algorithm you used to determine these words."""
+that would be most useful to detect articles that are similar to it?"""
 
 article = toptexts.sample(1)
+stop_words = stopwords.words('english')
+stop_words.extend(['http', 'https', 'category', 'infobox', \
+                   'wikipedia', 'redirect', 'from', \
+                       'ref', 'like', 'user', 'com', 'www',
+                       'title', 'url', 'otherlinks', 'basedomain',
+                       'cite', 'span', 'flagicon', 'html'])
+articlewordslist = article.text_processed.values.tolist()
+articlewordssplit = list(split_title(articlewordslist))
+
+# Remove stopwords
+articlewikiwords = [[word for word in simple_preprocess(str(w)) 
+             if word not in stop_words] for w in articlewordssplit]
+
+
+id2word = corpora.Dictionary(articlewikiwords) # maps between words and ids
+corpus2 = [id2word.doc2bow(w) for w in articlewikiwords] # creates bag-of-words
+#%%
+# Build LDA model
+# this may need to be run in the console
+num_topics = 10
+lda_model = gensim.models.LdaMulticore(corpus=corpus2,
+                                       id2word=id2word,
+                                       num_topics=num_topics)
+#%%
+# Print keywords in highest relevance 
+x = lda_model.print_topics()
+print(x)
+

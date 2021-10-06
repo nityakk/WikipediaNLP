@@ -10,6 +10,7 @@ import mwxml
 import pandas as pd
 import glob
 import os
+import csv
 import time
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
@@ -27,7 +28,7 @@ from heapq import nlargest
 #os.chdir(".//School//Columbia//ChildAbuse&Neglect_CodingExercise//WikipediaNLP")
 
 print("Loading data...")
-path = glob.glob("./*.xml*")[0]
+path = glob.glob("./*.xml*.*")[0]
 dump = mwxml.Dump.from_file(path)
 
 toptexts = pd.DataFrame(columns=['page_id', 'revision_id', 'text'])
@@ -105,7 +106,13 @@ for word in corpus:
 # get hundred most commonly used words
 hundred_largest = nlargest(100, wordcount, key=wordcount.get)
 print("100 most commonly used words found:")
-print(hundred_largest)
+
+# print to csv
+with open('hundred_largest.csv', 'w', encoding="ISO-8859-1", newline='') as file:
+    wr = csv.writer(file)
+    for w in hundred_largest:
+        if w!="":
+            wr.writerow([w])
 
 #%% 
 """Please choose any article in the dataset – what are the 10 words 
